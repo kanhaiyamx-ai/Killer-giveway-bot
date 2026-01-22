@@ -32,16 +32,6 @@ WEBHOOK_BASE_URL = os.environ.get("WEBHOOK_BASE_URL")
 WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
 WEBHOOK_URL = f"{WEBHOOK_BASE_URL}{WEBHOOK_PATH}"
 
-# ===================== STARTUP GUARD =====================
-BOOT_LOCK = ".boot.lock"
-
-def startup_guard():
-    if os.path.exists(BOOT_LOCK):
-        print("⚠️ Duplicate startup detected. Exiting.")
-        exit(0)
-    with open(BOOT_LOCK, "w") as f:
-        f.write("locked")
-
 # ===================== STORAGE =====================
 def load():
     if not os.path.exists(DATA_FILE):
@@ -169,8 +159,6 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ===================== MAIN (WEBHOOK ONLY) =====================
 def main():
-    startup_guard()
-
     app: Application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_error_handler(error_handler)

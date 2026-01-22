@@ -305,4 +305,4 @@ app.add_handler(CallbackQueryHandler(recheck, pattern="recheck"))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, menu_handler))
 
 print("🔥 ᴋɪʟʟᴇʀ ᴘʀɪᴢᴇ is running")
-app.run_polling()
+app.run_polling(drop_pending_updates=True)

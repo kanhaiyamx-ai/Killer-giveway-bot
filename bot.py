@@ -22,7 +22,7 @@ from telegram.ext import (
 BOT_NAME = "ᴋɪʟʟᴇʀ ᴘʀɪᴢᴇ"
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")  # set in Railway
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))  # CHANGE_THIS
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "7416432337"))  # CHANGE_THIS
 
 DATA_FILE = "users.json"
 

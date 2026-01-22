@@ -1,6 +1,5 @@
 import os
 import json
-import asyncio
 import logging
 from telegram import (
     Update,
@@ -21,16 +20,13 @@ from telegram.ext import (
 # ===================== BASIC CONFIG =====================
 BOT_NAME = "ᴋɪʟʟᴇʀ ᴘʀɪᴢᴇ"
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")  # set in Railway
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "7416432337"))  # CHANGE_THIS
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "7416432337"))
 
 DATA_FILE = "users.json"
 
 # ===================== WEBHOOK CONFIG =====================
 PORT = int(os.environ.get("PORT", 8080))
-
-# 👉 IMPORTANT: set this env var in Railway
-# Example value: https://killer-prize.up.railway.app
 WEBHOOK_BASE_URL = os.environ.get("WEBHOOK_BASE_URL")
 
 WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
@@ -69,7 +65,7 @@ def main_menu():
 
 # ===================== ERROR HANDLER =====================
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
-    logging.exception("Unhandled error:", exc_info=context.error)
+    logging.exception("Unhandled error", exc_info=context.error)
 
 # ===================== HANDLERS =====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -85,7 +81,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         f"👋 *Welcome to {BOT_NAME}*\n\n"
-        "Invite friends, earn points and redeem premium rewards 🎁\n\n"
+        "Invite friends, earn points and redeem rewards 🎁\n\n"
         f"💰 *Your Points:* {users[uid]['points']}\n\n"
         "🔗 *Your Referral Link:*\n"
         f"{ref_link}",
@@ -98,7 +94,7 @@ async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = str(update.effective_user.id)
 
     await update.message.reply_text(
-        f"👤 *Your Profile – {BOT_NAME}*\n\n"
+        f"👤 *Your Profile*\n\n"
         f"🆔 ID: `{uid}`\n"
         f"💰 Points: {users[uid]['points']}",
         reply_markup=main_menu(),
@@ -124,10 +120,10 @@ async def support(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = [
-        [InlineKeyboardButton("🍿 Netflix – 50", callback_data="redeem_netflix")],
+        [InlineKeyboardButton("🍿 Netflix – 50 Points", callback_data="redeem_netflix")]
     ]
     await update.message.reply_text(
-        f"🎁 *Redeem – {BOT_NAME}*\n\nChoose a reward 👇",
+        "🎁 *Redeem Rewards*\n\nChoose a reward 👇",
         reply_markup=InlineKeyboardMarkup(kb),
         parse_mode="Markdown",
     )
@@ -139,26 +135,26 @@ async def redeem_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     users = load()
     uid = str(q.from_user.id)
 
-    if q.data == "redeem_netflix":
-        if users["STOCK"]["netflix"] <= 0:
-            return await q.edit_message_text("❌ Netflix out of stock")
+    if users["STOCK"]["netflix"] <= 0:
+        return await q.edit_message_text("❌ Netflix is out of stock")
 
-        if users[uid]["points"] < 50:
-            return await q.edit_message_text("❌ Not enough points")
+    if users[uid]["points"] < 50:
+        return await q.edit_message_text("❌ Not enough points")
 
-        users["STOCK"]["netflix"] -= 1
-        users[uid]["points"] -= 50
-        save(users)
+    users["STOCK"]["netflix"] -= 1
+    users[uid]["points"] -= 50
+    save(users)
 
-        await context.bot.send_message(
-            ADMIN_ID,
-            f"🚨 New Redeem\nUser: {uid}\nPrize: Netflix",
-        )
+    await context.bot.send_message(
+        ADMIN_ID,
+        f"🚨 *New Redeem*\nUser: `{uid}`\nPrize: Netflix",
+        parse_mode="Markdown",
+    )
 
-        await q.edit_message_text(
-            "✅ *Redeem Successful*\n\nPlease DM admin with proof.",
-            parse_mode="Markdown",
-        )
+    await q.edit_message_text(
+        "✅ *Redeem Successful*\n\nPlease DM admin with proof.",
+        parse_mode="Markdown",
+    )
 
 async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     t = update.message.text
@@ -171,30 +167,26 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if t == "🆘 Support":
         return await support(update, context)
 
-# ===================== MAIN =====================
-async def main():
+# ===================== MAIN (WEBHOOK ONLY) =====================
+def main():
     startup_guard()
 
     app: Application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_error_handler(error_handler)
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(redeem_cb))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, menu_handler))
 
-    # Reset + set webhook
-    await app.bot.delete_webhook(drop_pending_updates=True)
-    await app.bot.set_webhook(WEBHOOK_URL)
-
     print("🔥 ᴋɪʟʟᴇʀ ᴘʀɪᴢᴇ running in WEBHOOK mode")
 
-    await app.run_webhook(
+    app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=WEBHOOK_PATH,
         webhook_url=WEBHOOK_URL,
+        drop_pending_updates=True,
     )
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
